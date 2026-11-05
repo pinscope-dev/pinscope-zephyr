@@ -1,0 +1,21 @@
+mainmenu "Pinscope sample"
+
+# The key and the WiFi network can come from the environment, so the sample
+# builds without editing a file:
+#   PINSCOPE_KEY=psk_... WIFI_SSID=... WIFI_PASSWORD=... west build -b <board> sample
+# (only when the build directory is created; afterwards use west build -t menuconfig).
+
+config PINSCOPE_PROJECT_KEY
+	default "$(PINSCOPE_KEY)"
+
+config SAMPLE_WIFI_SSID
+	string "WiFi network"
+	default "$(WIFI_SSID)"
+	depends on WIFI
+
+config SAMPLE_WIFI_PSK
+	string "WiFi password"
+	default "$(WIFI_PASSWORD)"
+	depends on WIFI
+
+source "Kconfig.zephyr"

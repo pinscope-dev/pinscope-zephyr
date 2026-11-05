@@ -1,0 +1,11 @@
+/* Settings need a storage partition; the board leaves its slot commented out.
+ * Two 16 KB sectors between MCUboot and the first image slot. */
+&flash0 {
+	partitions {
+		storage_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x00008000 DT_SIZE_K(32)>;
+		};
+	};
+};

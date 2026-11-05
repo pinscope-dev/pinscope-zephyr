@@ -1,0 +1,153 @@
+menuconfig PINSCOPE
+	bool "Pinscope: remote access, logs, metrics and updates"
+	select NETWORKING
+	select HWINFO
+	select SETTINGS
+	imply ENTROPY_GENERATOR
+	imply CSPRNG_ENABLED
+	help
+	  CONFIG_PINSCOPE=y and CONFIG_PINSCOPE_PROJECT_KEY are all a project
+	  needs: what Pinscope uses from Zephyr is switched on below, and an
+	  application can still set any of it differently in prj.conf.
+
+# What Pinscope needs from Zephyr, on by default once it is enabled.
+if PINSCOPE
+configdefault NET_IPV4
+	default y
+configdefault NET_TCP
+	default y
+configdefault NET_SOCKETS
+	default y
+configdefault POSIX_API
+	default y
+configdefault DNS_RESOLVER
+	default y
+configdefault NET_DHCPV4
+	default y
+configdefault NET_MGMT
+	default y
+configdefault NET_MGMT_EVENT
+	default y
+# The tunnel, a local web server and the stream to it, DHCP and DNS at once.
+configdefault NET_MAX_CONN
+	default 12
+configdefault NET_MAX_CONTEXTS
+	default 12
+configdefault ZVFS_OPEN_MAX
+	default 16
+# The device token is kept in settings, on the flash storage partition
+# (NVS, which Zephyr then picks as the settings backend).
+configdefault FLASH
+	default y
+configdefault FLASH_MAP
+	default y
+configdefault NVS
+	default y
+configdefault REBOOT
+	default y
+configdefault THREAD_NAME
+	default y
+configdefault THREAD_STACK_INFO
+	default y
+configdefault INIT_STACKS
+	default y
+configdefault SYS_HEAP_RUNTIME_STATS
+	default y
+endif
+
+config ENTROPY_PINSCOPE_RP2040_ROSC
+	bool "RP2040 ring oscillator entropy"
+	default y
+	depends on DT_HAS_PINSCOPE_RP2040_ROSC_ENTROPY_ENABLED
+	depends on ENTROPY_GENERATOR
+	select ENTROPY_HAS_DRIVER
+
+if PINSCOPE
+
+config PINSCOPE_KCONFIG
+	bool
+	default y
+
+config PINSCOPE_PROJECT_KEY
+	string "Project key"
+	default ""
+
+config PINSCOPE_DEVICE_NAME
+	string "Device name"
+	default ""
+
+config PINSCOPE_AUTOSTART
+	bool "Start Pinscope at boot"
+	default y
+	help
+	  Starts Pinscope with the settings above once the system is up, so the
+	  application needs no code at all. Turn it off to call pinscope_start()
+	  with a configuration of your own.
+
+config PINSCOPE_START_DHCP
+	bool "Start DHCP on the default interface"
+	default y if NET_DHCPV4
+	depends on PINSCOPE_AUTOSTART && NET_DHCPV4
+	help
+	  Zephyr leaves starting DHCP to the application. With this, Pinscope
+	  starts it at boot, unless the interface already has an address.
+
+config PINSCOPE_LOCAL_PORT
+	int "Local port to expose"
+	range 1 65535
+	default 80
+
+config PINSCOPE_STACK_SIZE
+	int "Stack of the Pinscope thread"
+	default 4096
+	help
+	  Measure with the stack/pinscope metric before lowering it.
+
+config PINSCOPE_THREAD_PRIORITY
+	int "Preemptible priority of the Pinscope thread"
+	default 7
+
+config PINSCOPE_TASK_PRIORITY
+	int
+	default 5
+
+config PINSCOPE_OTA
+	bool "Firmware updates from the server (MCUboot)"
+	default y if BOOTLOADER_MCUBOOT
+	select IMG_MANAGER
+	select STREAM_FLASH
+
+config PINSCOPE_OTA_TRIAL_S
+	int "Seconds a new firmware has to reach the server"
+	range 0 3600
+	default 300
+
+config PINSCOPE_LOG_CAPTURE
+	bool "Forward log output to Pinscope"
+	default y
+
+config PINSCOPE_LOG_BACKEND
+	bool "Zephyr logging backend for Pinscope"
+	default y
+	depends on PINSCOPE_LOG_CAPTURE && LOG && LOG_MODE_DEFERRED
+	select LOG_OUTPUT
+	help
+	  Everything the application and Zephyr log with LOG_* (and printk,
+	  with LOG_PRINTK) is sent as the device log, like ESP_LOG on ESP32.
+
+config PINSCOPE_CRASH_CAPTURE
+	bool "Crash reports"
+	default y
+	help
+	  Provides k_sys_fatal_error_handler() to keep the reason and the call
+	  chain across the reboot. Switch off if the application defines it.
+
+config PINSCOPE_SYSTEM_METRICS
+	bool "Built-in metrics"
+	default y
+
+config PINSCOPE_METRICS_INTERVAL
+	int "Seconds between metrics"
+	default 60
+
+endif

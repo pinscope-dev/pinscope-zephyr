@@ -1,0 +1,3 @@
+name: pinscope-rp2040
+append:
+  EXTRA_DTC_OVERLAY_FILE: rp2040-entropy.overlay

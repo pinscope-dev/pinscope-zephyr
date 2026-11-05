@@ -1,0 +1,6 @@
+board:
+  name: w55rp20_pinscope
+  full_name: W55RP20-EVB-Pico (Pinscope, MCUboot)
+  vendor: wiznet
+  socs:
+  - name: rp2040

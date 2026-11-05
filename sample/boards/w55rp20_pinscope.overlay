@@ -1,0 +1,35 @@
+/* W55RP20-EVB-Pico, 2 MB of flash: MCUboot (with the RP2040's second stage
+ * boot in front of it), two 960 KB image slots for updates, 64 KB of settings.
+ * MCUboot is built with the same layout (sysbuild/mcuboot_w55rp20.overlay). */
+/delete-node/ &code_partition;
+
+&flash0 {
+	partitions {
+		boot_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000100 (DT_SIZE_K(64) - 0x100)>;
+		};
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(960)>;
+		};
+		slot1_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00100000 DT_SIZE_K(960)>;
+		};
+		storage_partition: partition@1f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x001f0000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};

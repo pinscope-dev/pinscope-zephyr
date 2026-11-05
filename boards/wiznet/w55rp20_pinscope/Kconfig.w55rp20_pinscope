@@ -1,0 +1,5 @@
+# WIZnet W55RP20-EVB-Pico, as in Zephyr (boards/wiznet/w55rp20_evb_pico), but
+# the RP2040's second stage boot goes only into an image that starts the
+# flash: with MCUboot that is MCUboot, not the application in slot 0.
+config BOARD_W55RP20_PINSCOPE
+	select SOC_RP2040

@@ -1,0 +1,35 @@
+# A complete workspace for trying Pinscope, in one command:
+#
+#   west init -m https://github.com/pinscope-dev/pinscope-zephyr pinscope-ws
+#   cd pinscope-ws && west update
+#
+# Zephyr 4.5 with only the modules the sample's boards need. In your own
+# application, add pinscope as a project in your west.yml instead (README.md).
+manifest:
+  version: "1.2"
+  self:
+    path: modules/lib/pinscope
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+  projects:
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: v4.5.0
+      import:
+        name-allowlist:
+          - cmsis
+          - cmsis_6
+          - hal_nordic
+          - hal_rpi_pico
+          - hal_stm32
+          - hostap
+          - libmetal
+          - mbedtls
+          - mcuboot
+          - nrf_wifi
+          - open-amp
+          - picolibc
+          - segger
+          - tf-psa-crypto
+          - zcbor

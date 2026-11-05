@@ -1,0 +1,8 @@
+description: |
+  Random numbers from the RP2040's ring oscillator, hashed. The RP2040 has no
+  random generator of its own; this one lets Zephyr's CSPRNG and network
+  stack run on it.
+
+compatible: "pinscope,rp2040-rosc-entropy"
+
+include: base.yaml

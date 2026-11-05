@@ -1,0 +1,12 @@
+/* A random generator for the RP2040, which has none Zephyr knows: ring
+ * oscillator bits hashed with SHA-256 (drivers/entropy_rp2040_rosc.c). */
+/ {
+	chosen {
+		zephyr,entropy = &rosc_entropy;
+	};
+
+	rosc_entropy: rosc-entropy {
+		compatible = "pinscope,rp2040-rosc-entropy";
+		status = "okay";
+	};
+};
