@@ -1,0 +1,38 @@
+# The same for Nordic's nRF Connect SDK, which the nRF91 cellular boards need
+# (their modem library is not in upstream Zephyr):
+#
+#   west init -m https://github.com/pinscope-dev/pinscope-zephyr --mf west-ncs.yml pinscope-ncs
+#   cd pinscope-ncs && west update && pip install -r nrf/scripts/requirements-build.txt
+#
+# nRF Connect SDK 3.4.2 with only what the sample needs.
+manifest:
+  version: "1.2"
+  self:
+    path: modules/lib/pinscope
+  remotes:
+    - name: ncs
+      url-base: https://github.com/nrfconnect
+  projects:
+    - name: nrf
+      repo-path: sdk-nrf
+      remote: ncs
+      revision: v3.4.2
+      import:
+        name-allowlist:
+          - zephyr
+          - nrfxlib
+          - mcuboot
+          - trusted-firmware-m
+          - tfm-mcuboot
+          - oberon-psa-crypto
+          - mbedtls
+          - hal_nordic
+          - cmsis
+          - cmsis_6
+          - picolibc
+          - segger
+          - zcbor
+          - tf-m-tests
+          - psa-arch-tests
+          - cjson
+          - tinycrypt

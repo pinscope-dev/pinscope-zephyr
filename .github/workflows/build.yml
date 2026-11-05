@@ -1,0 +1,81 @@
+# Builds the sample for every board it is set up for, on each push.
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # Only for the build: a key is compiled in, so the sample needs one.
+  PINSCOPE_KEY: psk_ci-only
+  WIFI_SSID: ci
+  WIFI_PASSWORD: ci-password
+
+jobs:
+  zephyr:
+    name: ${{ matrix.board }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: nucleo_f429zi
+          - board: nucleo_h563zi
+          - board: nrf7002dk/nrf5340/cpuapp
+            blobs: nrf_wifi
+          - board: nrf5340dk/nrf5340/cpuapp
+            extra: -Dsample_SHIELD=wiznet_w5500
+          - board: esp32s3_devkitc/esp32s3/procpu
+            blobs: hal_espressif
+          - board: esp32c3_devkitm
+            blobs: hal_espressif
+          - board: frdm_rw612
+          - board: disco_l475_iot1
+          - board: rpi_pico2/rp2350a/m33_0/w/mcuboot
+            blobs: hal_infineon
+          - board: w55rp20_pinscope
+          - board: mps2/an385
+            emulator: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: modules/lib/pinscope
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: modules/lib/pinscope
+          sdk-version: 1.0.1
+          toolchains: arm-zephyr-eabi:riscv64-zephyr-elf:xtensa-espressif_esp32s3_zephyr-elf
+      - name: Blobs
+        if: matrix.blobs
+        run: west blobs fetch ${{ matrix.blobs }}
+      - name: Build
+        run: |
+          if [ "${{ matrix.emulator }}" = true ]; then
+            west build -b ${{ matrix.board }} modules/lib/pinscope/sample
+          else
+            west build -b ${{ matrix.board }} --sysbuild modules/lib/pinscope/sample -- ${{ matrix.extra }}
+          fi
+
+  ncs:
+    name: nrf9151dk/nrf9151/ns (nRF Connect SDK)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: modules/lib/pinscope
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: modules/lib/pinscope
+          manifest-file-name: west-ncs.yml
+          sdk-version: 1.0.1
+      - name: Python packages of the nRF Connect SDK
+        run: pip install -r nrf/scripts/requirements-build.txt
+      - name: Build
+        run: west build -b nrf9151dk/nrf9151/ns --sysbuild modules/lib/pinscope/sample

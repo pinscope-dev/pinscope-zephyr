@@ -7,35 +7,77 @@ open ports.
 
 ## Try it in five minutes
 
-You need [west and the Zephyr SDK](https://docs.zephyrproject.org/latest/develop/getting_started/index.html),
-a board with a network, and a free Pinscope account: the project key is under
-**Connect a device** in the [dashboard](https://pinscope.dev/#/).
+You need [west and the Zephyr SDK](https://docs.zephyrproject.org/latest/develop/getting_started/index.html)
+and the project key from **Connect a device** in the [dashboard](https://pinscope.dev/#/)
+(three devices are free).
 
 ```sh
 west init -m https://github.com/pinscope-dev/pinscope-zephyr pinscope-ws
 cd pinscope-ws && west update
 west packages pip --install
-
 export PINSCOPE_KEY=psk_...
-# Ethernet, with MCUboot for updates:
+
 west build -b nucleo_f429zi --sysbuild modules/lib/pinscope/sample
-# WiFi (the nRF7002's firmware comes as a blob, once):
-west blobs fetch nrf_wifi
-WIFI_SSID=... WIFI_PASSWORD=... west build -b nrf7002dk/nrf5340/cpuapp --sysbuild modules/lib/pinscope/sample
-# nRF5340 DK with a WIZnet W5500 Ethernet shield:
-west build -b nrf5340dk/nrf5340/cpuapp --sysbuild modules/lib/pinscope/sample -- -Dsample_SHIELD=wiznet_w5500
 west flash
 ```
 
 The board appears in the dashboard with its own HTTPS address. Open it, watch
-its log, and try `/crash` on its page to see a fatal error reported after the
+its log, and open `/crash` on its page to see a fatal error reported after the
 reboot. For an update, upload `build/sample/zephyr/zephyr.signed.bin` under
 Firmware.
 
-Boards the sample is set up for: `nrf7002dk/nrf5340/cpuapp` (WiFi),
-`nrf5340dk/nrf5340/cpuapp` (Ethernet over a W5500 shield),
-`nucleo_f429zi` (Ethernet) and `w55rp20_pinscope` (WIZnet W55RP20, Ethernet).
-Any board with a network works; see `sample/boards` for what a board needs.
+### No board? Run it in QEMU
+
+```sh
+west build -b mps2/an385 modules/lib/pinscope/sample
+qemu-system-arm -M mps2-an385 -nographic -nic user,model=lan9118 -kernel build/zephyr/zephyr.bin
+```
+
+With QEMU from your system (`brew install qemu`, `apt install qemu-system-arm`),
+which has the user networking this needs. The emulated board has no random
+generator, so this build uses a predictable one: for trying, never for a device.
+
+### Boards
+
+The sample is set up for these; any board with a network works the same way
+(`sample/boards` shows what a board needs). Each one is built on every push.
+
+| Board | `-b` | Network | Before building |
+|---|---|---|---|
+| ST NUCLEO-F429ZI | `nucleo_f429zi` | Ethernet | |
+| ST NUCLEO-H563ZI | `nucleo_h563zi` | Ethernet | |
+| ST B-L475E-IOT01A | `disco_l475_iot1` | WiFi (ISM43362) | `WIFI_SSID`, `WIFI_PASSWORD` |
+| Nordic nRF7002 DK | `nrf7002dk/nrf5340/cpuapp` | WiFi | `west blobs fetch nrf_wifi`, WiFi |
+| Nordic nRF5340 DK + W5500 | `nrf5340dk/nrf5340/cpuapp` | Ethernet | add `-- -Dsample_SHIELD=wiznet_w5500` |
+| Nordic nRF9151 DK | `nrf9151dk/nrf9151/ns` | LTE-M, NB-IoT | the nRF Connect SDK workspace below |
+| Espressif ESP32-S3-DevKitC | `esp32s3_devkitc/esp32s3/procpu` | WiFi | `west blobs fetch hal_espressif`, WiFi |
+| Espressif ESP32-C3-DevKitM | `esp32c3_devkitm` | WiFi | `west blobs fetch hal_espressif`, WiFi |
+| NXP FRDM-RW612 | `frdm_rw612` | Ethernet | |
+| Raspberry Pi Pico 2 W | `rpi_pico2/rp2350a/m33_0/w/mcuboot` | WiFi | `west blobs fetch hal_infineon`, WiFi |
+| WIZnet W55RP20-EVB-Pico | `w55rp20_pinscope` | Ethernet | |
+| QEMU (Arm MPS2) | `mps2/an385` | Ethernet | no `--sysbuild`; see above |
+
+WiFi boards take the network from the environment when the build directory is
+created: `WIFI_SSID=... WIFI_PASSWORD=... west build ...`.
+
+On the nRF9151 and the B-L475E-IOT01A the modem runs the TCP/IP stack itself
+(offloaded sockets). There the device's logs, metrics, crash reports and
+updates work as everywhere, but its own web page cannot be reached through
+Pinscope: that needs Zephyr's native IP stack.
+
+### nRF91: the nRF Connect SDK
+
+The nRF91 modem library is part of Nordic's nRF Connect SDK, not of upstream
+Zephyr. A workspace with nRF Connect SDK 3.4.2:
+
+```sh
+west init -m https://github.com/pinscope-dev/pinscope-zephyr --mf west-ncs.yml pinscope-ncs
+cd pinscope-ncs && west update
+pip install -r nrf/scripts/requirements-build.txt
+PINSCOPE_KEY=psk_... west build -b nrf9151dk/nrf9151/ns --sysbuild modules/lib/pinscope/sample
+```
+
+The board needs a SIM with an LTE-M or NB-IoT plan; LTE comes up at boot.
 
 ## Use it in your application
 

@@ -22,8 +22,9 @@ configdefault POSIX_API
 	default y
 configdefault DNS_RESOLVER
 	default y
+# DHCP only with Zephyr's own IPv4 stack; a modem that runs the stack (offloaded sockets) gets its address itself.
 configdefault NET_DHCPV4
-	default y
+	default y if NET_NATIVE_IPV4
 configdefault NET_MGMT
 	default y
 configdefault NET_MGMT_EVENT

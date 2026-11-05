@@ -1,0 +1,15 @@
+/* Keep the simulated flash in RAM that a reset does not reload, so
+ * settings (device token, id) survive a reboot as they do on real flash. */
+&sram0 {
+	reg = <0x20000000 0x3f8000>;
+};
+/ {
+	simflash_ram: memory@203f8000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x203f8000 0x8000>;
+		zephyr,memory-region = "SIMFLASH";
+	};
+};
+&sim_flash_controller {
+	memory-region = <&simflash_ram>;
+};
