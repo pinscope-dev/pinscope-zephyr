@@ -38,15 +38,18 @@ jobs:
           - board: mps2/an385
             emulator: true
     steps:
+      # West makes the folder above the manifest repository the workspace,
+      # so the repository goes one level down and the workspace is the
+      # checkout's root.
       - uses: actions/checkout@v4
         with:
-          path: modules/lib/pinscope
+          path: pinscope
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: modules/lib/pinscope
+          app-path: pinscope
           sdk-version: 1.0.1
           toolchains: arm-zephyr-eabi:riscv64-zephyr-elf:xtensa-espressif_esp32s3_zephyr-elf
       - name: Blobs
@@ -55,9 +58,9 @@ jobs:
       - name: Build
         run: |
           if [ "${{ matrix.emulator }}" = true ]; then
-            west build -b ${{ matrix.board }} modules/lib/pinscope/sample
+            west build -b ${{ matrix.board }} pinscope/sample
           else
-            west build -b ${{ matrix.board }} --sysbuild modules/lib/pinscope/sample -- ${{ matrix.extra }}
+            west build -b ${{ matrix.board }} --sysbuild pinscope/sample -- ${{ matrix.extra }}
           fi
 
   ncs:
@@ -66,16 +69,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: modules/lib/pinscope
+          path: pinscope
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: modules/lib/pinscope
+          app-path: pinscope
           manifest-file-name: west-ncs.yml
           sdk-version: 1.0.1
       - name: Python packages of the nRF Connect SDK
         run: pip install -r nrf/scripts/requirements-build.txt
       - name: Build
-        run: west build -b nrf9151dk/nrf9151/ns --sysbuild modules/lib/pinscope/sample
+        run: west build -b nrf9151dk/nrf9151/ns --sysbuild pinscope/sample

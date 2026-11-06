@@ -86,7 +86,7 @@ In your `west.yml`, under `projects`, then `west update`:
 ```yaml
 - name: pinscope
   url: https://github.com/pinscope-dev/pinscope-zephyr
-  revision: v0.1.0
+  revision: v0.2.0
   path: modules/lib/pinscope
 ```
 
