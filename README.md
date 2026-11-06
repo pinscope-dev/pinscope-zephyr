@@ -40,7 +40,8 @@ generator, so this build uses a predictable one: for trying, never for a device.
 ### Boards
 
 The sample is set up for these; any board with a network works the same way
-(`sample/boards` shows what a board needs). Each one is built on every push.
+(`sample/boards` shows what a board needs). Each one is built on every push;
+the W55RP20 and the ESP32-C6 also run on hardware with updates, rollback and crash reports.
 
 | Board | `-b` | Network | Before building |
 |---|---|---|---|
@@ -87,7 +88,7 @@ In your `west.yml`, under `projects`, then `west update`:
 ```yaml
 - name: pinscope
   url: https://github.com/pinscope-dev/pinscope-zephyr
-  revision: v0.2.2
+  revision: v0.2.3
   path: modules/lib/pinscope
 ```
 

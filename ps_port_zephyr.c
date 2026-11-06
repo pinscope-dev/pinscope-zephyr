@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/fatal.h>
@@ -97,6 +98,20 @@ static inline bool in_code(uint32_t address)
     return address >= (uint32_t)(uintptr_t)__text_region_start && address < (uint32_t)(uintptr_t)__text_region_end;
 }
 
+#if defined(CONFIG_PINSCOPE_CRASH_CAPTURE) && defined(CONFIG_XTENSA) && defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+/* Zephyr's Xtensa unwinder (arch/xtensa/core/xtensa_backtrace.c); its header
+ * is private to the architecture. */
+struct xtensa_backtrace_frame_t {
+    uint32_t pc;
+    uint32_t sp;
+    uint32_t next_pc;
+    uint32_t mask;
+    int cause;
+};
+void xtensa_backtrace_get_start(uint32_t *pc, uint32_t *sp, uint32_t *next_pc, int *interrupted_stack);
+bool xtensa_backtrace_get_next_frame(struct xtensa_backtrace_frame_t *frame);
+#endif
+
 #ifdef CONFIG_PINSCOPE_CRASH_CAPTURE
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
@@ -142,6 +157,23 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
             if (!(*sp & 1u) && in_code(*sp)) {
                 s_crash.bt[s_crash.count++] = *sp;
             }
+        }
+    }
+#elif defined(CONFIG_XTENSA) && defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+    /* Xtensa (ESP32, ESP32-S3): the windowed ABI unwinds exactly, with
+     * Zephyr's own unwinder. Return addresses carry the window increment in
+     * their top two bits and point after the call: map them back, minus 3. */
+    if (esf) {
+        struct xtensa_backtrace_frame_t f = { .mask = 0x40000000, .cause = 0 };
+        xtensa_backtrace_get_start(&f.pc, &f.sp, &f.next_pc, (int *)esf);
+        f.mask = f.pc & 0xc0000000;
+        s_crash.bt[s_crash.count++] = f.pc;
+        while (s_crash.count < CRASH_FRAMES && f.next_pc != 0 && xtensa_backtrace_get_next_frame(&f)) {
+            uint32_t pc = (f.pc & 0x80000000) ? ((f.pc & 0x3fffffff) | f.mask) : f.pc;
+            if (!in_code(pc - 3)) {
+                break;
+            }
+            s_crash.bt[s_crash.count++] = pc - 3;
         }
     }
 #else
@@ -439,8 +471,43 @@ int ps_port_ota_end(void)
 }
 
 void ps_port_ota_abort(void) { s_img_open = false; }
-void ps_port_ota_confirm(void) { boot_write_img_confirmed(); }
-bool ps_port_ota_on_trial(void) { return !boot_is_img_confirmed(); }
+void ps_port_restart(void);
+static volatile bool s_confirmed;
+
+void ps_port_ota_confirm(void)
+{
+    if (boot_write_img_confirmed() == 0) {
+        s_confirmed = true;
+    }
+}
+/* On trial: MCUboot booted this image as a test after an update, and goes back
+ * unless it is confirmed. An image written with a cable is not on trial, even
+ * unconfirmed: restarting it would not bring anything back. */
+bool ps_port_ota_on_trial(void) { return mcuboot_swap_type() == BOOT_SWAP_TYPE_REVERT; }
+
+/* A new image that hangs (a thread stuck, the agent never reaching the
+ * server) must not stay: if it is still unconfirmed a minute after its trial,
+ * restart from the timer interrupt, which runs whatever the threads do, and
+ * MCUboot goes back to the previous image. Started at boot, before the
+ * application, so it covers an image that never starts Pinscope at all. */
+static void trial_guard_expired(struct k_timer *t)
+{
+    ARG_UNUSED(t);
+    if (!s_confirmed) {
+        ps_port_restart();
+    }
+}
+K_TIMER_DEFINE(s_trial_guard, trial_guard_expired, NULL);
+
+static int trial_guard_init(void)
+{
+    s_confirmed = !ps_port_ota_on_trial();
+    if (!s_confirmed && CONFIG_PINSCOPE_OTA_TRIAL_S > 0) {
+        k_timer_start(&s_trial_guard, K_SECONDS(CONFIG_PINSCOPE_OTA_TRIAL_S + 60), K_NO_WAIT);
+    }
+    return 0;
+}
+SYS_INIT(trial_guard_init, APPLICATION, 0);
 #else
 bool ps_port_ota_supported(void) { return false; }
 int  ps_port_ota_begin(uint32_t size) { ARG_UNUSED(size); return -1; }

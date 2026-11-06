@@ -33,3 +33,7 @@ BUILD_ASSERT(sizeof(CONFIG_PINSCOPE_PROJECT_KEY) > 1,
 BUILD_ASSERT(CONFIG_NET_MAX_CONN >= 6,
              "Pinscope needs CONFIG_NET_MAX_CONN of at least 6: the tunnel, a local server, "
              "the stream to it, DHCP and DNS");
+
+#if defined(CONFIG_PINSCOPE_CRASH_CAPTURE) && defined(CONFIG_XTENSA) && !defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+#warning "Pinscope: crash reports on Xtensa carry a backtrace only with CONFIG_XTENSA_ENABLE_BACKTRACE=y"
+#endif
