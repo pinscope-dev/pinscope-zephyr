@@ -20,7 +20,10 @@ manifest:
         name-allowlist:
           - cmsis
           - cmsis_6
+          - hal_espressif
+          - hal_infineon
           - hal_nordic
+          - hal_nxp
           - hal_rpi_pico
           - hal_stm32
           - hostap
