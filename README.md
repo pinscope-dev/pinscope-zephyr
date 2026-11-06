@@ -54,7 +54,7 @@ The sample is set up for these; any board with a network works the same way
 | Espressif ESP32-C3-DevKitM | `esp32c3_devkitm` | WiFi | `west blobs fetch hal_espressif`, WiFi |
 | NXP FRDM-RW612 | `frdm_rw612` | Ethernet | |
 | Raspberry Pi Pico 2 W | `rpi_pico2/rp2350a/m33_0/w/mcuboot` | WiFi | `west blobs fetch hal_infineon`, WiFi |
-| WIZnet W55RP20-EVB-Pico | `w55rp20_pinscope` | Ethernet | |
+| WIZnet W55RP20-EVB-Pico | `w55rp20_pinscope` | Ethernet | load `build/pinscope.uf2` with `picotool load -v -x` |
 | QEMU (Arm MPS2) | `mps2/an385` | Ethernet | no `--sysbuild`; see above |
 
 WiFi boards take the network from the environment when the build directory is
@@ -86,7 +86,7 @@ In your `west.yml`, under `projects`, then `west update`:
 ```yaml
 - name: pinscope
   url: https://github.com/pinscope-dev/pinscope-zephyr
-  revision: v0.2.1
+  revision: v0.2.2
   path: modules/lib/pinscope
 ```
 

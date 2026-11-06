@@ -22,3 +22,21 @@ if(BOARD STREQUAL "w55rp20_pinscope" AND SB_CONFIG_BOOTLOADER_MCUBOOT)
   endif()
   set(mcuboot_EXTRA_CONF_FILE "${conf}" CACHE INTERNAL "")
 endif()
+
+# RP2040 boards with MCUboot: one UF2 with MCUboot and the signed application,
+# build/pinscope.uf2, to load with picotool. The application's own zephyr.uf2
+# is not signed, and MCUboot does not start it.
+if(BOARD STREQUAL "w55rp20_pinscope" AND SB_CONFIG_BOOTLOADER_MCUBOOT)
+  add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/pinscope.uf2
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
+            -o ${CMAKE_BINARY_DIR}/pinscope.hex
+            ${CMAKE_BINARY_DIR}/mcuboot/zephyr/zephyr.hex
+            ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE}/zephyr/zephyr.signed.hex
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py -c -f 0xe48bff56
+            -o ${CMAKE_BINARY_DIR}/pinscope.uf2 ${CMAKE_BINARY_DIR}/pinscope.hex
+    DEPENDS mcuboot ${DEFAULT_IMAGE}
+    COMMENT "Writing pinscope.uf2: MCUboot and the signed application"
+  )
+  add_custom_target(pinscope_uf2 ALL DEPENDS ${CMAKE_BINARY_DIR}/pinscope.uf2)
+endif()

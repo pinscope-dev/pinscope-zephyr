@@ -147,18 +147,27 @@ static void net_event(struct net_mgmt_event_callback *cb, uint64_t event, struct
     }
 }
 
+/* Set just before a restart Pinscope asks for (an update, the dashboard): some
+ * chips, the RP2040 among them, report a software reset as the reset pin. */
+#define RESTART_MAGIC 0x50535257u
+static __noinit uint32_t s_restart;
+
 static void record_reset_cause(void)
 {
     uint32_t cause = 0;
+    bool asked = s_restart == RESTART_MAGIC;
+    s_restart = 0;
     if (s_crash.magic == CRASH_MAGIC) {
         strcpy(s_reset, "panic");
     } else if (hwinfo_get_reset_cause(&cause) == 0) {
-        strcpy(s_reset, (cause & RESET_WATCHDOG)      ? "wdt"
-                        : (cause & RESET_BROWNOUT)    ? "brownout"
-                        : (cause & RESET_SOFTWARE)    ? "sw"
-                        : (cause & RESET_PIN)         ? "ext"
-                        : (cause & RESET_POR)         ? "poweron"
-                                                      : "other");
+        strcpy(s_reset, (cause & RESET_WATCHDOG)            ? "wdt"
+                        : (cause & RESET_BROWNOUT)          ? "brownout"
+                        : (cause & RESET_POR)               ? "poweron"
+                        : (asked || (cause & RESET_SOFTWARE)) ? "sw"
+                        : (cause & RESET_PIN)               ? "ext"
+                                                            : "other");
+    } else if (asked) {
+        strcpy(s_reset, "sw");
     }
     hwinfo_clear_reset_cause();
 }
@@ -279,12 +288,35 @@ static uint32_t boot_id(void)
     return id;
 }
 
+/* The application's VERSION file if it has one, else the version MCUboot's
+ * header gives the running image (imgtool --version), as the dashboard shows it. */
+static const char *app_version(void)
+{
+    static char v[32];
+    if (PS_APP_VERSION[0] || v[0]) {
+        return PS_APP_VERSION[0] ? PS_APP_VERSION : v;
+    }
+#ifdef CONFIG_PINSCOPE_OTA
+    struct mcuboot_img_header h;
+    if (boot_read_bank_header(PARTITION_ID(slot0_partition), &h, sizeof(h)) == 0 && h.mcuboot_version == 1) {
+        const struct mcuboot_img_sem_ver *sv = &h.h.v1.sem_ver;
+        if (sv->major || sv->minor || sv->revision || sv->build_num) {
+            int n = snprintf(v, sizeof(v), "%u.%u.%u", sv->major, sv->minor, sv->revision);
+            if (sv->build_num && n > 0 && n < (int)sizeof(v)) {
+                snprintf(v + n, sizeof(v) - n, "+%u", (unsigned)sv->build_num);
+            }
+        }
+    }
+#endif
+    return v;
+}
+
 void ps_port_info(char *buf, size_t len)
 {
     char build[17];
     build_id_hex(build, 16);
     snprintf(buf, len, "chip=%s;board=%s;fw=%.31s;zephyr=%s;reset=%s;elf=%s;boot=%08x", CONFIG_SOC, CONFIG_BOARD,
-             PS_APP_VERSION, KERNEL_VERSION_STRING, s_reset, build, (unsigned)boot_id());
+             app_version(), KERNEL_VERSION_STRING, s_reset, build, (unsigned)boot_id());
 }
 
 /* ---- small persistent store: the settings subsystem, under "pinscope/" ---- */
@@ -397,7 +429,11 @@ void ps_port_ota_confirm(void) {}
 bool ps_port_ota_on_trial(void) { return false; }
 #endif
 
-void ps_port_restart(void) { sys_reboot(SYS_REBOOT_COLD); }
+void ps_port_restart(void)
+{
+    s_restart = RESTART_MAGIC;
+    sys_reboot(SYS_REBOOT_COLD);
+}
 
 /* ---- system metrics ---- */
 

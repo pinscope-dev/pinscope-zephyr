@@ -117,6 +117,9 @@ config PINSCOPE_OTA
 	default y if BOOTLOADER_MCUBOOT
 	select IMG_MANAGER
 	select STREAM_FLASH
+	# The update slot still holds the image a previous update swapped out:
+	# erase each part before writing it, or the new image is corrupt.
+	select IMG_ERASE_PROGRESSIVELY
 
 config PINSCOPE_OTA_TRIAL_S
 	int "Seconds a new firmware has to reach the server"
