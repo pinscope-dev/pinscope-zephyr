@@ -52,6 +52,7 @@ The sample is set up for these; any board with a network works the same way
 | Nordic nRF9151 DK | `nrf9151dk/nrf9151/ns` | LTE-M, NB-IoT | the nRF Connect SDK workspace below |
 | Espressif ESP32-S3-DevKitC | `esp32s3_devkitc/esp32s3/procpu` | WiFi | `west blobs fetch hal_espressif`, WiFi |
 | Espressif ESP32-C3-DevKitM | `esp32c3_devkitm` | WiFi | `west blobs fetch hal_espressif`, WiFi |
+| Espressif ESP32-C6-DevKitC | `esp32c6_devkitc/esp32c6/hpcore` | WiFi | `west blobs fetch hal_espressif`, WiFi |
 | NXP FRDM-RW612 | `frdm_rw612` | Ethernet | |
 | Raspberry Pi Pico 2 W | `rpi_pico2/rp2350a/m33_0/w/mcuboot` | WiFi | `west blobs fetch hal_infineon`, WiFi |
 | WIZnet W55RP20-EVB-Pico | `w55rp20_pinscope` | Ethernet | load `build/pinscope.uf2` with `picotool load -v -x` |

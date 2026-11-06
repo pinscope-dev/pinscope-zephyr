@@ -30,6 +30,8 @@ jobs:
             blobs: hal_espressif
           - board: esp32c3_devkitm
             blobs: hal_espressif
+          - board: esp32c6_devkitc/esp32c6/hpcore
+            blobs: hal_espressif
           - board: frdm_rw612
           - board: disco_l475_iot1
           - board: rpi_pico2/rp2350a/m33_0/w/mcuboot

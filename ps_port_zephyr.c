@@ -122,6 +122,28 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
             }
         }
     }
+#elif defined(CONFIG_RISCV)
+    if (esf) {
+        s_crash.bt[s_crash.count++] = (uint32_t)esf->mepc;
+        if (in_code((uint32_t)esf->ra)) {
+            s_crash.bt[s_crash.count++] = (uint32_t)esf->ra;
+        }
+        /* The frame was pushed onto the stack that faulted: the words above
+         * it that point into code give an approximate call chain. */
+        const uint32_t *sp = (const uint32_t *)(esf + 1);
+        uintptr_t top = (uintptr_t)sp + 256;
+#ifdef CONFIG_THREAD_STACK_INFO
+        const struct k_thread *t = k_current_get();
+        if ((uintptr_t)sp >= t->stack_info.start && (uintptr_t)sp < t->stack_info.start + t->stack_info.size) {
+            top = MIN(top, t->stack_info.start + t->stack_info.size);
+        }
+#endif
+        for (; (uintptr_t)sp + 4 <= top && s_crash.count < CRASH_FRAMES; sp++) {
+            if (!(*sp & 1u) && in_code(*sp)) {
+                s_crash.bt[s_crash.count++] = *sp;
+            }
+        }
+    }
 #else
     ARG_UNUSED(esf);
 #endif
