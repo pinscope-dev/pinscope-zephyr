@@ -5,7 +5,7 @@ for Zephyr devices, over one outbound connection to [Pinscope](https://pinscope.
 About 8.6 KB of RAM, no TLS library. Works behind NAT and on cellular, with no
 open ports.
 
-Featured on [CNX Software](https://www.cnx-software.com/2026/11/25/pinscope-a-web-based-remote-access-and-vulnerability-tracking-solution-for-esp32-zephyr-pico-2-w-and-linux-sbcs/).
+Featured on [Hackaday](https://hackaday.com/2026/11/27/esp32-remote-access-done-light/) and [CNX Software](https://www.cnx-software.com/2026/11/25/pinscope-a-web-based-remote-access-and-vulnerability-tracking-solution-for-esp32-zephyr-pico-2-w-and-linux-sbcs/).
 
 ## Try it in five minutes
 
